@@ -217,7 +217,7 @@ def create_groundtruth_database(dataset_class_name,
                     with_label_3d=True,
                     backend_args=backend_args)
             ])
-
+    dataset_cfg['ann_file'] = '/cpfs01/user/konglingdong/models/bevfusion/mmdetection3d/data/nuscenes_v2/nuscenes_infos_train.pkl'
     dataset = DATASETS.build(dataset_cfg)
 
     if database_save_path is None:

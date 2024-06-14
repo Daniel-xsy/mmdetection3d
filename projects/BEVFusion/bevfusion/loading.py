@@ -2,6 +2,7 @@
 import copy
 from typing import Optional
 
+import torch
 import mmcv
 import numpy as np
 from mmengine.fileio import get
@@ -205,4 +206,36 @@ class BEVLoadMultiViewImageFromFiles(LoadMultiViewImageFromFiles):
             to_rgb=False)
         results['num_views'] = self.num_views
         results['num_ref_frames'] = self.num_ref_frames
+        return results
+
+
+@TRANSFORMS.register_module()
+class SensorDropAug:
+    def __init__(self, drop_rate):
+        self.drop_rate = drop_rate
+
+    def __call__(self, results: dict) -> Optional[dict]:
+        if np.random.rand() < self.drop_rate:
+            if np.random.rand() < 0.5:
+                results = self.drop_camera(results)
+            else:
+                results = self.drop_lidar(results)
+        return results
+
+    def drop_camera(self, results):
+        img = results['inputs']['img']  # [6, C, H, W]
+        # Set img to a zero tensor of the same shape, device, and dtype
+        device = img.device
+        dtype = img.dtype
+        img = torch.zeros_like(img, device=device, dtype=dtype)
+        results['inputs']['img'] = img
+        return results
+
+    def drop_lidar(self, results):
+        lidar_points = results['inputs']['points']  # [N, 5]
+        # Randomly select 100 points if there are more than 100
+        if lidar_points.shape[0] > 2:
+            indices = np.random.choice(lidar_points.shape[0], 2, replace=False)
+            lidar_points = lidar_points[indices]
+        results['inputs']['points'] = lidar_points
         return results

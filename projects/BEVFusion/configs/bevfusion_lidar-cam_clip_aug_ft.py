@@ -13,29 +13,17 @@ model = dict(
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=False),
     img_backbone=dict(
-        type='mmdet.SwinTransformer',
-        embed_dims=96,
-        depths=[2, 2, 6, 2],
-        num_heads=[3, 6, 12, 24],
-        window_size=7,
-        mlp_ratio=4,
-        qkv_bias=True,
-        qk_scale=None,
-        drop_rate=0.0,
-        attn_drop_rate=0.0,
-        drop_path_rate=0.2,
-        patch_norm=True,
-        out_indices=[1, 2, 3],
-        with_cp=False,
-        convert_weights=True,
-        init_cfg=dict(
-            type='Pretrained',
-            checkpoint=  # noqa: E251
-            'https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth'  # noqa: E501
-        )),
+        type='CLIPModifiedResNet',
+        layers=(3, 4, 23, 3),
+        output_dim=512, 
+        heads=32,
+        width=64,
+        load_from='/cpfs01/user/konglingdong/models/bevfusion/mmdetection3d/clip-res101.pth',
+        freeze=False
+        ),
     img_neck=dict(
         type='GeneralizedLSSFPN',
-        in_channels=[192, 384, 768],
+        in_channels=[512, 1024, 2048], # 512 1024 2048
         out_channels=256,
         start_level=0,
         num_outs=3,
@@ -128,7 +116,10 @@ train_pipeline = [
             'lidar_path', 'img_path', 'transformation_3d_flow', 'pcd_rotation',
             'pcd_scale_factor', 'pcd_trans', 'img_aug_matrix',
             'lidar_aug_matrix', 'num_pts_feats'
-        ])
+        ]),
+    dict(
+        type='SensorDropAug',
+        drop_rate=0.2),
 ]
 
 test_pipeline = [
@@ -169,7 +160,10 @@ test_pipeline = [
             'cam2img', 'ori_cam2img', 'lidar2cam', 'lidar2img', 'cam2lidar',
             'ori_lidar2img', 'img_aug_matrix', 'box_type_3d', 'sample_idx',
             'lidar_path', 'img_path', 'num_pts_feats'
-        ])
+        ]),
+    dict(
+        type='SensorDropAug',
+        drop_rate=1)
 ]
 
 train_dataloader = dict(
@@ -214,7 +208,7 @@ param_scheduler = [
 ]
 
 # runtime settings
-train_cfg = dict(by_epoch=True, max_epochs=6, val_interval=1)
+train_cfg = dict(by_epoch=True, max_epochs=12, val_interval=1)
 val_cfg = dict()
 test_cfg = dict()
 
@@ -223,7 +217,7 @@ optim_wrapper = dict(
     optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.01),
     clip_grad=dict(max_norm=35, norm_type=2))
 
-load_from = '/cpfs01/user/konglingdong/models/bevfusion/mmdetection3d/bevfusion_lidar_voxel0075_second_secfpn_8xb4-cyclic-20e_nus-3d-2628f933.pth'
+load_from = '/cpfs01/user/konglingdong/models/bevfusion/mmdetection3d/work_dirs/bevfusion_lidar-cam_clip_aug/epoch_6.pth'
 
 # Default setting for scaling LR automatically
 #   - `enable` means enable scaling LR automatically

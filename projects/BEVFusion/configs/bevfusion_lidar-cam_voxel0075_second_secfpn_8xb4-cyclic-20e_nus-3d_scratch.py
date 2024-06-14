@@ -128,7 +128,10 @@ train_pipeline = [
             'lidar_path', 'img_path', 'transformation_3d_flow', 'pcd_rotation',
             'pcd_scale_factor', 'pcd_trans', 'img_aug_matrix',
             'lidar_aug_matrix', 'num_pts_feats'
-        ])
+        ]),
+    dict(
+        type='SensorDropAug',
+        drop_rate=1),
 ]
 
 test_pipeline = [
@@ -182,15 +185,15 @@ test_dataloader = val_dataloader
 param_scheduler = [
     dict(
         type='LinearLR',
-        start_factor=0.33333333,
+        start_factor=0.1,
         by_epoch=False,
         begin=0,
-        end=500),
+        end=2000),
     dict(
         type='CosineAnnealingLR',
         begin=0,
-        T_max=6,
-        end=6,
+        T_max=24,
+        end=24,
         by_epoch=True,
         eta_min_ratio=1e-4,
         convert_to_iter_based=True),
@@ -201,29 +204,29 @@ param_scheduler = [
         type='CosineAnnealingMomentum',
         eta_min=0.85 / 0.95,
         begin=0,
-        end=2.4,
+        end=9.6,
         by_epoch=True,
         convert_to_iter_based=True),
     dict(
         type='CosineAnnealingMomentum',
         eta_min=1,
-        begin=2.4,
-        end=6,
+        begin=9.6,
+        end=24,
         by_epoch=True,
         convert_to_iter_based=True)
 ]
 
 # runtime settings
-train_cfg = dict(by_epoch=True, max_epochs=6, val_interval=1)
+train_cfg = dict(by_epoch=True, max_epochs=24, val_interval=1)
 val_cfg = dict()
 test_cfg = dict()
 
 optim_wrapper = dict(
     type='OptimWrapper',
-    optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.01),
+    optimizer=dict(type='AdamW', lr=0.001, weight_decay=0.01),
     clip_grad=dict(max_norm=35, norm_type=2))
 
-load_from = '/cpfs01/user/konglingdong/models/bevfusion/mmdetection3d/bevfusion_lidar_voxel0075_second_secfpn_8xb4-cyclic-20e_nus-3d-2628f933.pth'
+# load_from = '/cpfs01/user/konglingdong/models/bevfusion/mmdetection3d/bevfusion_lidar_voxel0075_second_secfpn_8xb4-cyclic-20e_nus-3d-2628f933.pth'
 
 # Default setting for scaling LR automatically
 #   - `enable` means enable scaling LR automatically
